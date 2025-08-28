@@ -266,10 +266,10 @@ Expected: [expected behavior]
 - 🔄 **NEXT: Analyze sample Excel files to understand merge patterns**
 
 ### [Date] - Session 2: Sample File Analysis
-- [ ] Upload and analyze sample Excel files
-- [ ] Document actual merge patterns found
-- [ ] Define pattern recognition rules
-- [ ] Update technical specifications based on real examples
+- ✅ Analyzed provided Excel samples (merges fast pass; borders/fonts detailed pass)
+- ✅ Documented merge block sizes per sheet and used ranges
+- 🔄 Drafting pattern recognition rules based on observed structures
+- 🔄 Updating specs with concrete findings
 
 ---
 
@@ -296,6 +296,24 @@ Expected: [expected behavior]
 4. gui_interface.py - Two-button interface
 5. logger.py - Verbose development logging
 ```
+
+### Sample Analysis Summary (Session 2)
+- Top merge block sizes (counts): 2x1, 3x1, 1x9, 1x11, 1x13, 7x1
+- Common horizontal header widths: 9, 11, 13, 12, 18 columns
+- Common vertical category heights: 2, 3, 7, 8, 5 rows
+- Borders/fonts (sampled): repeated border weights observed; common font sizes 10/9/8/11pt; ~15% bold
+- Artifacts saved:
+  - `reports/analysis.json` (merges-only, all files)
+  - `reports/analysis_full.json` (borders+fonts included)
+  - `reports/merge_summary.csv` (per-file per-sheet merge block counts)
+  - `reports/patterns_summary.md` (auto-generated summary & answers)
+
+### Emerging Recognition Rules (draft)
+1. Header rows: treat max-width 1xN merge blocks at sheet top as section titles.
+2. Category columns: detect vertical Nx1 merges to infer category grouping depth.
+3. Insertion context: within-category additions inherit nearest vertical merge pattern; new-category inserts start after last vertical merge block with matching left boundary.
+4. Border preservation: copy perimeter border weights from the merge area; fallback to neighbor majority if mixed.
+5. Font carryover: copy font from the top-left cell of the relevant merge area.
 
 ### Sample Files Needed
 - Upload 2-3 representative Excel files
