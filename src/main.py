@@ -1,7 +1,7 @@
 import argparse
 import os
 from analyzer.excel_pattern_analyzer import ExcelPatternAnalyzer, write_json_report
-from excel_connector import ExcelConnector
+from excel_connector import ExcelConnector, ExcelPerformanceTuner
 from row_inserter import RowInserter
 from gui.gui_interface import LinePuncherGUI
 
@@ -33,6 +33,12 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Include border and font extraction (slower)",
     )
+    parser.add_argument(
+        "--gui",
+        dest="run_gui",
+        action="store_true",
+        help="Launch the two-button GUI instead of running analysis",
+    )
     return parser.parse_args()
 
 
@@ -49,29 +55,31 @@ def main() -> None:
         out_path = os.path.join(repo_root, out_path)
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
 
-    # Analysis mode when directory exists
-    analyzer = ExcelPatternAnalyzer(directory_path=target_dir, include_borders=args.include_borders)
-    results = analyzer.analyze(max_cells_per_sheet=args.max_cells)
-    write_json_report(results, out_path)
-    print(f"Wrote report to: {out_path}")
-
-    # Minimal GUI wiring (optional run)
-    try:
+    if args.run_gui:
+        # GUI mode
         conn = ExcelConnector()
         inserter = RowInserter()
 
         def on_add_row() -> None:
-            _, ws, cell = conn.get_active_cell()
-            inserter.add_row_to_category(ws, int(cell.Row))
+            app = conn.application()
+            with ExcelPerformanceTuner(app):
+                _, ws, cell = conn.get_active_cell()
+                inserter.add_row_to_category(ws, int(cell.Row))
 
         def on_add_category() -> None:
-            _, ws, cell = conn.get_active_cell()
-            inserter.add_new_category(ws, int(cell.Row))
+            app = conn.application()
+            with ExcelPerformanceTuner(app):
+                _, ws, cell = conn.get_active_cell()
+                inserter.add_new_category(ws, int(cell.Row))
 
-        # Comment out next line if you don't want GUI auto-run
-        # LinePuncherGUI(on_add_row, on_add_category).run()
-    except Exception:
-        pass
+        LinePuncherGUI(on_add_row, on_add_category).run()
+        return
+
+    # Analysis mode
+    analyzer = ExcelPatternAnalyzer(directory_path=target_dir, include_borders=args.include_borders)
+    results = analyzer.analyze(max_cells_per_sheet=args.max_cells)
+    write_json_report(results, out_path)
+    print(f"Wrote report to: {out_path}")
 
 
 if __name__ == "__main__":
